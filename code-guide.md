@@ -14,6 +14,17 @@ this before you open the PR — don't rely on the reviewer to catch it.
 
 ## 1. Core Engineering Principles
 
+* **Default to modifying what exists — don't build a parallel implementation.** Before
+  writing a new component, file, or function, search the repo for something that already
+  does most of the job (an existing component, a stub, a placeholder, a partial
+  implementation). A work item phrased as "make X do Y," "give X a default response," "the
+  button doesn't work yet," or any description of *current* behavior that needs to change
+  is a strong signal to edit that existing file in place — not scaffold a new one next to
+  it. A second, competing implementation of the same feature (e.g. a brand-new chatbot
+  component when one is already built and already mounted in the UI) leaves dead code
+  behind and creates ambiguity about which one is actually live. Only create a new file
+  when the work item asks for functionality that genuinely has no existing home in the
+  codebase.
 * **Match the size of the change to the size of the ask.** A one-line color fix doesn't need
   a refactor of the component around it. Don't rename things, restructure folders, or
   "clean up while you're in there" unless that was the actual task — it makes the diff
