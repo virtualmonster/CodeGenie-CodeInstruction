@@ -133,15 +133,32 @@ this before you open the PR — don't rely on the reviewer to catch it.
   should get one. Bug fixes should get a test that would have caught the bug. Trivial
   passthroughs (a one-line getter, a component that's pure JSX with no logic) don't need
   dedicated tests just to hit a coverage number.
-* **Assert on behavior, not implementation detail.** Prefer checking visible text, ARIA
-  roles/labels, element presence, and the outcome of user interactions over checking exact
-  computed style values (hex/rgb colors, pixel dimensions). Colors and spacing get tweaked
-  constantly during active development — a suite that breaks on every palette change stops
-  being a useful signal and starts being noise the next change has to wade through. The
-  exception is a test whose entire purpose is verifying a theme/style utility itself (e.g.
-  `headerTheme.test.js` asserting `THEME_COLORS` matches what the component actually
-  applies) — that's a legitimate, narrow case; don't repeat the same style assertions
-  across every component that happens to use the theme.
+* **Never assert an exact color or style value — no exceptions, including theme/style
+  utilities themselves.** Prefer checking visible text, ARIA roles/labels, element
+  presence, and the outcome of user interactions over checking colors (hex/rgb), fonts, or
+  pixel dimensions. This project's palette gets changed often and deliberately (rebrands,
+  demos, A/B looks) — a suite that breaks on every palette change stops being a useful
+  signal and starts being noise the next change has to wade through. An earlier version of
+  this guide carved out an exception for "a test whose entire purpose is verifying a theme
+  utility" — that exception was a mistake: it was read as license to write comprehensive
+  "must be pink, must not be blue" test suites, which broke on the very next color change
+  and had to be deleted twice. If you need to test a theme/style function's *behavior*
+  (that it accepts overrides, that it returns the right shape of object), assert on
+  structure — `Object.keys(result)`, `typeof result`, that an override is threaded through
+  relative to the default — never on what the actual color values are.
+* **Never write a "should NOT be `<old value>`" assertion.** A negative check against a
+  specific value you just changed away from (a color, a class name, a string) encodes a
+  point-in-time fact as if it were a permanent invariant. It will not catch a regression
+  back to the old value in any way a normal assertion on the new value wouldn't already
+  catch, and it actively breaks the moment that value is chosen again for an unrelated
+  reason. If you're tempted to write one, you almost certainly don't need the test at all.
+* **Don't create a new test file to verify something an existing test file already
+  covers.** If a module or component already has a test file, extend or update it — don't
+  add a second, differently-named file that tests the same thing (`colorTheme.test.js`
+  next to an existing `headerTheme.test.js` covering the same module, say). Two files
+  asserting overlapping things under different names is how a value gets updated in one
+  place and silently missed in the other, which is exactly the kind of self-inflicted CI
+  failure this section is trying to prevent.
 * **Tests must be deterministic.** No dependency on real wall-clock time, real network
   calls, unseeded randomness, or execution order between test files. Mock external
   services and timers; don't mock the thing you're actually testing.
@@ -240,7 +257,9 @@ rather than assume:
 
 - [ ] Does the change do only what the work item asked, with no unrelated refactors bundled in?
 - [ ] Are there tests for new/changed behavior, and do they live in `tests/` mirroring `src/`?
-- [ ] Do the tests assert behavior rather than brittle style/implementation detail?
+- [ ] Do the tests assert behavior rather than exact color/style values (including in a theme/style utility's own tests)?
+- [ ] Any "should NOT be `<old value>`" negative assertions that should just be deleted?
+- [ ] Any new test file that duplicates coverage an existing test file already has for the same module?
 - [ ] Did the PR run the tests and confirm they pass — not just that they exist?
 - [ ] Are any new/bumped dependencies checked against the CI runtime's Node version?
 - [ ] Is `package-lock.json` (or equivalent) updated and consistent with `package.json`?
